@@ -1,0 +1,485 @@
+import React, { useState, useEffect } from 'react';
+import { ShoppingCart, Trash2, Plus, Minus, X, Send, MapPin, ChevronRight, Utensils, Star, Phone, Instagram, Mail, User, Tag, Quote, ExternalLink, Briefcase } from 'lucide-react';
+
+const App = () => {
+  // --- State Management ---
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Semua');
+  const [view, setView] = useState('home');
+
+  // --- Data Produk ---
+  const products = [
+    {
+      id: 1,
+      name: "Ayam Geprek Original",
+      price: 15000,
+      category: "Ayam",
+      image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&q=80&w=400",
+      description: "Ayam goreng renyah dengan sambal bawang khas Chikendut yang pedasnya mantap."
+    },
+    {
+      id: 2,
+      name: "Ayam Bakar Madu",
+      price: 18000,
+      category: "Ayam",
+      image: "https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773112257_c8cee5df.jpg",
+      description: "Ayam bakar dengan bumbu madu manis gurih meresap sampai ke dalam."
+    },
+    {
+      id: 3,
+      name: "Paket Hemat 1 (Nasi + Ayam + Es Teh)",
+      price: 22000,
+      category: "Paket",
+      image: "https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773111799_53993d4a.jpg",
+      description: "Perpaduan sempurna Nasi Putih hangat, Ayam Goreng renyah, dan kesegaran Es Teh manis."
+    },
+    {
+      id: 4,
+      name: "Kulit Ayam Crispy",
+      price: 10000,
+      category: "Snek",
+      image: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&q=80&w=400",
+      description: "Kulit ayam super renyah dan gurih, cocok untuk camilan santai."
+    },
+    {
+      id: 5,
+      name: "Es Teh Manis",
+      price: 5000,
+      category: "Minuman",
+      image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=400",
+      description: "Minuman segar penghilang dahaga setelah makan pedas."
+    },
+    {
+      id: 6,
+      name: "Thai Tea Creamy",
+      price: 12000,
+      category: "Minuman",
+      image: "https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773111144_d0d58c38.jpg",
+      description: "Teh susu khas Thailand yang pekat, manis, dan sangat berkrim."
+    }
+  ];
+
+  // --- Data Testimoni ---
+  const testimonials = [
+    {
+      id: 1,
+      name: "Andi Saputra",
+      role: "Pelanggan Setia",
+      content: "Ayam gepreknya juara! Sambalnya bener-bener nendang dan ayamnya tetap kriuk meskipun sudah dibawa pulang ke rumah.",
+      rating: 5
+    },
+    {
+      id: 2,
+      name: "Siti Aminah",
+      role: "Ibu Rumah Tangga",
+      content: "Paket hematnya pas banget buat makan siang keluarga. Harganya terjangkau tapi rasanya bintang lima. Sukses terus Teteh Nisa!",
+      rating: 5
+    },
+    {
+      id: 3,
+      name: "Budi Cahyono",
+      role: "Karyawan Kantor",
+      content: "Ayam Bakar Madunya bumbunya meresap sampai ke tulang. Pengiriman juga cepat lewat WA. Sangat direkomendasikan!",
+      rating: 4
+    }
+  ];
+
+  const categories = ['Semua', ...new Set(products.map(p => p.category))];
+
+  // --- Logika Keranjang ---
+  const addToCart = (product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(prev => prev.filter(item => item.id !== productId));
+  };
+
+  const updateQuantity = (productId, delta) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === productId) {
+        const newQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }));
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // --- Checkout WhatsApp ---
+  const handleCheckout = () => {
+    const phone = "6283866583535"; 
+    let message = "*PESANAN BARU - CHIKENDUT*\n\n";
+    cart.forEach(item => {
+      message += `- ${item.name} (${item.quantity}x) = Rp${(item.price * item.quantity).toLocaleString()}\n`;
+    });
+    message += `\n*Total: Rp${cartTotal.toLocaleString()}*`;
+    message += `\n\nAlamat Pengiriman: Jl. Haurgeulis`;
+    
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+  };
+
+  const filteredProducts = activeCategory === 'Semua' 
+    ? products 
+    : products.filter(p => p.category === activeCategory);
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-red-200">
+      {/* Navigasi Utama */}
+      <nav className="sticky top-0 z-50 bg-red-700 text-white shadow-xl">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+            <div className="bg-white p-1 rounded-full shadow-md">
+              <div className="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center font-bold text-white">
+                <Utensils size={18} />
+              </div>
+            </div>
+            <h1 className="text-xl font-black tracking-tighter italic uppercase">CHIKENDUT</h1>
+          </div>
+
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2.5 hover:bg-red-800 rounded-2xl transition-all active:scale-95"
+          >
+            <ShoppingCart size={24} />
+            {cartCount > 0 && (
+              <span className="absolute top-1 right-1 bg-yellow-400 text-red-800 text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-red-700 animate-pulse">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
+      {/* --- Promo Banner di Bawah Logo --- */}
+      <div className="bg-yellow-400 w-full overflow-hidden border-b-4 border-red-700 relative">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 bg-red-700 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 animate-bounce">
+              <Tag size={12} /> Promo Terbatas!
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-red-700 italic leading-none mb-2 tracking-tighter uppercase">
+              BELI BANYAK <br/> LEBIH HEMAT!
+            </h2>
+            <p className="text-red-800 font-bold text-sm md:text-base opacity-90 max-w-md">
+              Dapatkan potongan harga spesial untuk pemesanan paket party & acara kantor. Hubungi Teteh Nisa sekarang!
+            </p>
+          </div>
+          <div className="w-full md:w-auto flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-2 bg-white/30 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <img 
+                src="https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773108988_91550608.png" 
+                alt="[Banner Promo Chikendut]" 
+                className="h-32 md:h-44 w-auto object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      {view === 'home' && (
+        <header className="bg-red-700 text-white border-b-8 border-yellow-400 overflow-hidden">
+          <div className="max-w-6xl mx-auto px-4 py-16 flex flex-col md:flex-row items-center gap-10">
+            <div className="flex-1 text-center md:text-left z-10">
+              <div className="inline-flex items-center gap-2 bg-yellow-400 text-red-800 px-4 py-1.5 rounded-full font-black text-xs mb-6 shadow-lg uppercase tracking-widest">
+                <Star size={14} fill="currentColor" /> Terlaris di Haurgeulis
+              </div>
+              <h2 className="text-5xl md:text-7xl font-black mb-6 leading-[1.1] tracking-tighter uppercase italic">
+                AYAM GORENG <br/>
+                <span className="text-yellow-400">PALING DUT</span>
+              </h2>
+              <p className="text-lg mb-10 opacity-90 max-w-lg font-medium leading-relaxed">
+                Nikmati rahasia kelezatan ayam goreng kami yang dikelola langsung dengan penuh kasih oleh Teteh Nisa. Renyah di luar, lembut di dalam!
+              </p>
+              <button 
+                onClick={() => document.getElementById('menu-section').scrollIntoView({ behavior: 'smooth' })}
+                className="bg-white text-red-700 px-10 py-4 rounded-3xl font-black text-lg hover:bg-yellow-400 hover:text-red-800 transition-all shadow-2xl uppercase tracking-widest flex items-center gap-2 mx-auto md:mx-0 group"
+              >
+                Lihat Menu <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+            
+            <div className="flex-1 flex justify-center relative">
+              <div className="absolute inset-0 bg-yellow-400/20 blur-[100px] rounded-full"></div>
+              <img 
+                src="https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773108971_0b5ca7cf.png" 
+                alt="[Ayam goreng lezat khas Chikendut]" 
+                className="relative z-10 w-full max-w-sm h-auto rounded-[2rem] shadow-2xl border-4 border-white object-contain animate-float"
+              />
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* Menu Section */}
+      <main id="menu-section" className="max-w-6xl mx-auto px-4 py-16">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8">
+          <div>
+            <span className="text-red-600 font-black uppercase tracking-widest text-xs mb-2 block">Pilihan Lezat</span>
+            <h3 className="text-4xl font-black text-gray-900 italic uppercase tracking-tight">Daftar Menu Kami</h3>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-8 py-3 rounded-2xl font-black transition-all uppercase text-xs border-2 tracking-widest ${
+                  activeCategory === cat 
+                    ? 'bg-red-700 text-white border-red-700 shadow-lg scale-105' 
+                    : 'bg-white text-gray-400 border-gray-100 hover:border-red-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col h-full group">
+              <div className="h-64 overflow-hidden relative">
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute top-4 right-4 bg-yellow-400 text-red-800 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-lg">
+                  {product.category}
+                </div>
+              </div>
+              <div className="p-8 flex flex-col flex-1">
+                <h4 className="text-2xl font-black mb-3 italic uppercase group-hover:text-red-700 transition-colors">{product.name}</h4>
+                <p className="text-gray-500 text-sm mb-8 flex-1 leading-relaxed">{product.description}</p>
+                <div className="flex items-center justify-between mt-auto bg-gray-50 p-4 rounded-3xl group-hover:bg-red-50 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Harga</span>
+                    <span className="text-2xl font-black text-red-700 tracking-tighter">Rp{product.price.toLocaleString()}</span>
+                  </div>
+                  <button 
+                    onClick={() => addToCart(product)} 
+                    className="bg-red-700 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-red-800 shadow-lg active:scale-90 transition-all hover:rotate-6"
+                  >
+                    <Plus size={24} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* --- Portofolio Section --- */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-gradient-to-br from-red-700 to-red-900 rounded-[3rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-yellow-400/20 transition-all duration-700"></div>
+            
+            <div className="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 bg-yellow-400 rounded-full border-8 border-white/20 overflow-hidden shadow-2xl z-10">
+              <img 
+                src="https://simangu.smksalirsyad-hgl.sch.id/apimangu/uploads/siswa/232410021/1773108971_0b5ca7cf.png" 
+                alt="[Profil Owner Teteh Nisa]" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            <div className="flex-1 text-center md:text-left z-10 text-white">
+              <div className="inline-flex items-center gap-2 bg-yellow-400 text-red-900 px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+                <Briefcase size={14} /> Meet the Owner
+              </div>
+              <h3 className="text-4xl md:text-5xl font-black italic mb-6 leading-tight uppercase tracking-tighter">
+                Teteh Nisa <br/>
+                <span className="text-yellow-400">Owner Chikendut</span>
+              </h3>
+              <p className="text-red-50 text-lg mb-8 opacity-90 font-medium leading-relaxed max-w-2xl">
+                Dedikasi Teteh Nisa dalam mengolah resep tradisional menjadi hidangan modern yang disukai banyak orang. Ingin tahu lebih banyak tentang perjalanan dan karya Teteh?
+              </p>
+              <a 
+                href="https://nisa9628.github.io" 
+                target="_blank" 
+                rel="noreferrer"
+                className="inline-flex items-center gap-3 bg-white text-red-700 px-8 py-4 rounded-2xl font-black text-sm hover:bg-yellow-400 hover:text-red-900 transition-all shadow-xl uppercase tracking-widest group"
+              >
+                Kunjungi Portofolio <ExternalLink size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonial Section */}
+      <section className="bg-red-50 py-20 border-y border-red-100">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <span className="text-red-600 font-black uppercase tracking-widest text-xs mb-2 block">Apa Kata Mereka?</span>
+            <h3 className="text-4xl font-black text-gray-900 italic uppercase tracking-tight">Testimoni Pelanggan</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map(testi => (
+              <div key={testi.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all border border-red-100 relative group">
+                <div className="absolute -top-5 left-10 bg-yellow-400 text-red-800 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform">
+                  <Quote size={20} fill="currentColor" />
+                </div>
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={16} fill={i < testi.rating ? "#eab308" : "none"} color={i < testi.rating ? "#eab308" : "#d1d5db"} />
+                  ))}
+                </div>
+                <p className="text-gray-600 italic mb-6 leading-relaxed">"{testi.content}"</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-700 font-black italic">
+                    {testi.name[0]}
+                  </div>
+                  <div>
+                    <h5 className="font-black text-gray-900 uppercase italic text-sm">{testi.name}</h5>
+                    <p className="text-xs text-gray-400 font-bold uppercase">{testi.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-zinc-900 text-white pt-20 pb-12 mt-12 border-t-[12px] border-yellow-400">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-16">
+          <div className="space-y-8">
+            <div>
+              <h4 className="text-4xl font-black italic mb-2 text-red-600 tracking-tighter uppercase">CHIKENDUT</h4>
+              <div className="flex items-center gap-2 text-yellow-400 mb-4 font-black italic uppercase text-xs">
+                <User size={14} /> Owner: Teteh Nisa
+              </div>
+              <p className="text-gray-400 leading-relaxed font-medium">UMKM kuliner kebanggaan Haurgeulis yang menyajikan kelezatan ayam goreng dengan resep rahasia Teteh Nisa.</p>
+            </div>
+            
+            <div className="space-y-4">
+              <a href="https://wa.me/6283866583535" target="_blank" rel="noreferrer" className="flex items-center gap-4 bg-zinc-800 p-4 rounded-2xl border border-zinc-700 hover:border-green-500 transition-colors group">
+                <div className="bg-green-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><Phone size={20} /></div>
+                <div><p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">WhatsApp</p><p className="font-black">0838-6658-3535</p></div>
+              </a>
+              <a href="https://www.instagram.com/chikendut" target="_blank" rel="noreferrer" className="flex items-center gap-4 bg-zinc-800 p-4 rounded-2xl border border-zinc-700 hover:border-pink-500 transition-colors group">
+                <div className="bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><Instagram size={20} /></div>
+                <div><p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Instagram</p><p className="font-black">@chikendut</p></div>
+              </a>
+              <a href="mailto:chikendut@gmail.com" className="flex items-center gap-4 bg-zinc-800 p-4 rounded-2xl border border-zinc-700 hover:border-blue-500 transition-colors group">
+                <div className="bg-blue-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><Mail size={20} /></div>
+                <div><p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Email</p><p className="font-black">chikendut@gmail.com</p></div>
+              </a>
+            </div>
+          </div>
+          
+          <div>
+            <h5 className="font-black mb-8 text-xl uppercase italic border-b-4 border-red-700 inline-block pb-1">Operasional</h5>
+            <ul className="space-y-4">
+              <li className="flex justify-between p-4 bg-zinc-800 rounded-2xl border border-zinc-700/50"><span>Senin - Jumat</span> <span className="text-yellow-400 font-black">10:00 - 21:00</span></li>
+              <li className="flex justify-between p-4 bg-zinc-800 rounded-2xl border border-zinc-700/50"><span>Sabtu - Minggu</span> <span className="text-yellow-400 font-black">10:00 - 22:00</span></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h5 className="font-black mb-8 text-xl uppercase italic border-b-4 border-red-700 inline-block pb-1">Lokasi</h5>
+            <div className="bg-zinc-800 p-6 rounded-[2rem] border-2 border-zinc-700/30 flex gap-4 hover:border-red-600 transition-colors group">
+              <div className="bg-red-700 p-4 rounded-2xl self-start shadow-xl group-hover:rotate-12 transition-transform"><MapPin size={24} /></div>
+              <p className="text-sm italic text-gray-400">Jl. Haurgeulis, Kec. Haurgeulis, Kab. Indramayu, Jawa Barat 45264</p>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-zinc-800 text-center text-zinc-600 text-[10px] font-black uppercase tracking-widest">
+          &copy; 2024 Chikendut - Dikelola oleh Teteh Nisa.
+        </div>
+      </footer>
+
+      {/* Cart Drawer */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsCartOpen(false)}>
+          <div 
+            className="absolute right-0 top-0 h-full w-full max-w-md bg-white flex flex-col shadow-2xl rounded-l-[3rem] overflow-hidden animate-in slide-in-from-right duration-500" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-8 bg-red-700 text-white flex justify-between items-center shadow-lg">
+              <div className="flex items-center gap-3">
+                <ShoppingCart size={24} />
+                <h2 className="text-xl font-black uppercase italic tracking-widest">Keranjang</h2>
+              </div>
+              <button onClick={() => setIsCartOpen(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"><X size={28} /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
+              {cart.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-4">
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ShoppingCart size={40} />
+                  </div>
+                  <p className="uppercase font-black italic text-sm tracking-widest">Keranjang Kosong</p>
+                </div>
+              ) : (
+                cart.map(item => (
+                  <div key={item.id} className="bg-white p-4 rounded-3xl flex gap-4 items-center shadow-sm border border-gray-100 group">
+                    <img src={item.image} className="w-20 h-20 object-cover rounded-2xl shadow-md group-hover:scale-105 transition-transform" alt={item.name} />
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-black text-sm uppercase italic mb-1 truncate">{item.name}</h5>
+                      <p className="text-red-700 font-black">Rp{item.price.toLocaleString()}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <button onClick={() => updateQuantity(item.id, -1)} className="bg-gray-100 p-1.5 rounded-lg hover:bg-red-50 transition-colors"><Minus size={14} /></button>
+                        <span className="font-black text-sm w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)} className="bg-gray-100 p-1.5 rounded-lg hover:bg-red-50 transition-colors"><Plus size={14} /></button>
+                      </div>
+                    </div>
+                    <button onClick={() => removeFromCart(item.id)} className="text-gray-200 hover:text-red-600 transition-colors p-2"><Trash2 size={20} /></button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {cart.length > 0 && (
+              <div className="p-10 bg-white border-t rounded-t-[3.5rem] shadow-[0_-20px_40px_rgba(0,0,0,0.05)]">
+                <div className="flex justify-between items-end mb-10">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Bayar</span>
+                    <span className="text-4xl font-black text-red-700 italic tracking-tighter leading-none">Rp{cartTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleCheckout} 
+                  className="w-full bg-green-600 text-white py-6 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 hover:bg-green-700 shadow-xl border-b-[6px] border-green-800 uppercase tracking-widest active:translate-y-1 active:border-b-0 transition-all"
+                >
+                  <Send size={24} /> Kirim ke WhatsApp
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Styles untuk Animasi */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
